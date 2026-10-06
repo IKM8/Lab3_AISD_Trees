@@ -25,10 +25,11 @@ TYPE
          END;
 
 VAR
+  F: TEXT;
   Root: PNode;
   FileName: STRING;
   Ans: CHAR;
-  Again: BOOLEAN;
+  Again, Loaded: BOOLEAN;
 
 { убирает пробелы в конце строки }
 FUNCTION TrimRight(Str: STRING): STRING;
@@ -67,24 +68,15 @@ BEGIN
     END;
 END;
 
-{ читает дерево из файла (уровень задается числом точек в начале строки) }
-PROCEDURE LoadTree(FileName: STRING);
+{ читает дерево из уже открытого файла (уровень задается числом точек) }
+PROCEDURE LoadTree(VAR F: TEXT);
 VAR
-  F: TEXT;
   S: STRING;
   Level, K, Len, Num, I: INTEGER;
   Name: STRING;
   NewNode: PNode;
   Stack: ARRAY[0..20] OF PNode;
 BEGIN
-  ASSIGN(F, FileName);
-  TRY
-    RESET(F);
-  EXCEPT
-    WRITELN('Не удалось открыть файл!');
-    HALT(1);
-  END;
-
   FOR I := 0 TO 20
   DO
     Stack[I] := NIL;
@@ -168,7 +160,6 @@ BEGIN
               DISPOSE(NewNode);
         END;
     END;
-  CLOSE(F);
 END;
 
 { сумма компьютеров в поддереве }
@@ -306,14 +297,32 @@ BEGIN
 END;
 
 BEGIN
-  WRITE('Введите имя входного файла: ');
-  READLN(FileName);
-  LoadTree(FileName);
-
   Again := TRUE;
+  Loaded := FALSE;
+
   WHILE Again
   DO
     BEGIN
+      { файл загружаем только один раз - при первом проходе }
+      IF NOT Loaded
+      THEN
+        BEGIN
+          WRITE('Введите имя входного файла: ');
+          READLN(FileName);
+
+          ASSIGN(F, FileName);
+          TRY
+            RESET(F);
+          EXCEPT
+            WRITELN('Не удалось открыть файл!');
+            BREAK;
+          END;
+
+          LoadTree(F);
+          CLOSE(F);
+          Loaded := TRUE;
+        END;
+
       WRITELN;
       WRITELN('1 - показать дерево');
       WRITELN('2 - факультеты с мин/макс числом компьютеров');
